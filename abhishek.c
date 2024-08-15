@@ -1,28 +1,26 @@
 #include <stdio.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
-struct items
-{
-    char item[20];
+struct items {
+    char item[50];
     float price;
     int qty;
 };
 
-struct orders
-{
+struct orders {
     char customer[50];
     char date[50];
     int numOfItems;
-    struct items itm[50];
+    struct items *itm;
 };
-// functions to generate biils
-void generateBillHeader(char name[50], char date[30])
-{
+
+// Function to generate bill header
+void generateBillHeader(char name[50], char date[50]) {
     printf("\n\n");
     printf("\t    ADV. Restaurant");
     printf("\n\t   -----------------");
-    printf("\nDate:%s", date);
+    printf("\nDate: %s", date);
     printf("\nInvoice To: %s", name);
     printf("\n");
     printf("---------------------------------------\n");
@@ -32,165 +30,179 @@ void generateBillHeader(char name[50], char date[30])
     printf("\n---------------------------------------");
     printf("\n\n");
 }
-void generateBillBody(char item[30], int qty, float price)
-{
-    printf("%s\t\t", item);
-    printf("%d\t\t", qty);
-    printf("%.2f\t\t", qty * price);
-    printf("\n");
+
+// Function to generate bill body
+void generateBillBody(char item[50], int qty, float price) {
+    printf("%-16s", item);
+    printf("%-8d", qty);
+    printf("%.2f\n", qty * price);
 }
 
-void generateBillFooter(float total)
-{
-    printf("\n");
+// Function to generate bill footer
+void generateBillFooter(float total) {
     float dis = 0.1 * total;
     float netTotal = total - dis;
     float cgst = 0.09 * netTotal, grandTotal = netTotal + 2 * cgst; // netTotal + cgst + sgst
-    printf("---------------------------------------\n");
-    printf("Sub Total\t\t\t%.2f", total);
-    printf("\nDiscount @10%s\t\t\t%.2f", "%", dis);
+
+    printf("\n---------------------------------------");
+    printf("\nSub Total\t\t\t%.2f", total);
+    printf("\nDiscount @10%%\t\t\t%.2f", dis);
     printf("\n\t\t\t\t-------");
     printf("\nNet Total\t\t\t%.2f", netTotal);
-    printf("\nCGST @9%s\t\t\t%.2f", "%", cgst);
-    printf("\nSGST @9%s\t\t\t%.2f", "%", cgst);
+    printf("\nCGST @9%%\t\t\t%.2f", cgst);
+    printf("\nSGST @9%%\t\t\t%.2f", cgst);
     printf("\n---------------------------------------");
     printf("\nGrand Total\t\t\t%.2f", grandTotal);
     printf("\n---------------------------------------\n");
 }
-int main()
-{
 
+int main() {
     int opt, n;
     struct orders ord;
     struct orders order;
     char saveBill = 'y', contFlag = 'y';
     char name[50];
     FILE *fp;
-    // dashboard
-    while (contFlag == 'y')
-    {
-        system("clear");
+
+    while (contFlag == 'y') {
+        // Clear screen cross-platform
+        printf("\033[H\033[J");
         float total = 0;
         int invoiceFound = 0;
+
         printf("\t============ADV. RESTAURANT============");
-        printf("\n\nPlease select your prefered operation");
-        printf("\n\n1.Generate Invoice");
-        printf("\n2.Show all Invoices");
-        printf("\n3.Search Invoice");
-        printf("\n4.Exit");
+        printf("\n\nPlease select your preferred operation");
+        printf("\n1. Generate Invoice");
+        printf("\n2. Show all Invoices");
+        printf("\n3. Search Invoice");
+        printf("\n4. Exit");
 
-        printf("\n\nYour choice:\t");
+        printf("\n\nYour choice: ");
         scanf("%d", &opt);
-        fgetc(stdin);
-        switch (opt)
-        {
-        case 1:
-            system("clear");
-            printf("\nPlease enter the name of the customer:\t");
-            fgets(ord.customer, 50, stdin);
-            ord.customer[strlen(ord.customer) - 1] = 0;
-            strcpy(ord.date, __DATE__);
-            printf("\nPlease enter the number of items:\t");
-            scanf("%d", &n);
-            ord.numOfItems = n;
-            for (int i = 0; i < n; i++)
-            {
-                fgetc(stdin);
-                printf("\n\n");
-                printf("Please enter the item %d:\t", i + 1);
-                fgets(ord.itm[i].item, 20, stdin);
-                ord.itm[i].item[strlen(ord.itm[i].item) - 1] = 0;
-                printf("Please enter the quantity:\t");
-                scanf("%d", &ord.itm[i].qty);
-                printf("Please enter the unit price:\t");
-                scanf("%f", &ord.itm[i].price);
-                total += ord.itm[i].qty * ord.itm[i].price;
-            }
+        getchar(); // To consume the newline character left in the buffer
 
-            generateBillHeader(ord.customer, ord.date);
-            for (int i = 0; i < ord.numOfItems; i++)
-            {
-                generateBillBody(ord.itm[i].item, ord.itm[i].qty, ord.itm[i].price);
-            }
-            generateBillFooter(total);
+        switch (opt) {
+            case 1:
+                // Clear screen
+                printf("\033[H\033[J");
+                printf("\nPlease enter the name of the customer: ");
+                fgets(ord.customer, 50, stdin);
+                ord.customer[strcspn(ord.customer, "\n")] = 0; // Remove trailing newline
+                strcpy(ord.date, __DATE__);
 
-            printf("\nDo you want to save the invoice [y/n]:\t");
-            scanf("%s", &saveBill);
+                printf("\nPlease enter the number of items: ");
+                scanf("%d", &ord.numOfItems);
+                getchar(); // Consume newline
 
-            if (saveBill == 'y')
-            {
-                fp = fopen("RestaurantBill.dat", "a+");
-                fwrite(&ord, sizeof(struct orders), 1, fp);
-                if (fwrite != 0)
-                    printf("\nSuccessfully saved");
-                else
-                    printf("\nError saving");
-                fclose(fp);
-            }
-            break;
+                ord.itm = (struct items *)malloc(ord.numOfItems * sizeof(struct items));
 
-        case 2:
-            system("clear");
-            fp = fopen("RestaurantBill.dat", "r");
-            printf("\n  *****Your Previous Invoices*****\n");
-            while (fread(&order, sizeof(struct orders), 1, fp))
-            {
-                float tot = 0;
-                generateBillHeader(order.customer, order.date);
-                for (int i = 0; i < order.numOfItems; i++)
-                {
-                    generateBillBody(order.itm[i].item, order.itm[i].qty, order.itm[i].price);
-                    tot += order.itm[i].qty * order.itm[i].price;
+                for (int i = 0; i < ord.numOfItems; i++) {
+                    printf("\nPlease enter item %d:\t", i + 1);
+                    fgets(ord.itm[i].item, 50, stdin);
+                    ord.itm[i].item[strcspn(ord.itm[i].item, "\n")] = 0; // Remove trailing newline
+
+                    printf("Please enter the quantity:\t");
+                    scanf("%d", &ord.itm[i].qty);
+                    printf("Please enter the unit price:\t");
+                    scanf("%f", &ord.itm[i].price);
+                    getchar(); // Consume newline
+
+                    total += ord.itm[i].qty * ord.itm[i].price;
                 }
-                generateBillFooter(tot);
-            }
-            fclose(fp);
-            break;
 
-        case 3:
-            printf("Enter the name of the customer:\t");
-            // fgetc(stdin);
-            fgets(name, 50, stdin);
-            name[strlen(name) - 1] = 0;
-            system("clear");
-            fp = fopen("RestaurantBill.dat", "r");
-            printf("\t*****Invoice of %s*****", name);
-            while (fread(&order, sizeof(struct orders), 1, fp))
-            {
-                float tot = 0;
-                if (!strcmp(order.customer, name))
-                {
+                generateBillHeader(ord.customer, ord.date);
+                for (int i = 0; i < ord.numOfItems; i++) {
+                    generateBillBody(ord.itm[i].item, ord.itm[i].qty, ord.itm[i].price);
+                }
+                generateBillFooter(total);
+
+                printf("\nDo you want to save the invoice [y/n]: ");
+                scanf("%c", &saveBill);
+
+                if (saveBill == 'y') {
+                    fp = fopen("RestaurantBill.dat", "a+");
+                    if (fp == NULL) {
+                        printf("\nError opening file!");
+                        break;
+                    }
+                    fwrite(&ord, sizeof(struct orders) + ord.numOfItems * sizeof(struct items), 1, fp);
+                    if (fwrite != 0)
+                        printf("\nSuccessfully saved\n");
+                    else
+                        printf("\nError saving\n");
+                    fclose(fp);
+                }
+                free(ord.itm); // Free the allocated memory
+                break;
+
+            case 2:
+                // Clear screen
+                printf("\033[H\033[J");
+                fp = fopen("RestaurantBill.dat", "r");
+                if (fp == NULL) {
+                    printf("\nError opening file!");
+                    break;
+                }
+                printf("\n  *****Your Previous Invoices*****\n");
+                while (fread(&order, sizeof(struct orders), 1, fp)) {
+                    fread(order.itm, sizeof(struct items), order.numOfItems, fp);
+                    float tot = 0;
                     generateBillHeader(order.customer, order.date);
-                    for (int i = 0; i < order.numOfItems; i++)
-                    {
+                    for (int i = 0; i < order.numOfItems; i++) {
                         generateBillBody(order.itm[i].item, order.itm[i].qty, order.itm[i].price);
                         tot += order.itm[i].qty * order.itm[i].price;
                     }
                     generateBillFooter(tot);
-                    invoiceFound = 1;
                 }
-            }
-            if (!invoiceFound)
-            {
-                printf("Sorry the invoice for %s doesnot exists", name);
-            }
-            fclose(fp);
-            break;
+                fclose(fp);
+                break;
 
-        case 4:
-            printf("\n\t\t Bye Bye :)\n\n");
-            exit(0);
-            break;
+            case 3:
+                getchar(); // Consume any trailing newline character
+                printf("Enter the name of the customer: ");
+                fgets(name, 50, stdin);
+                name[strcspn(name, "\n")] = 0; // Remove trailing newline
 
-        default:
-            printf("Sorry invalid option");
-            break;
+                // Clear screen
+                printf("\033[H\033[J");
+                fp = fopen("RestaurantBill.dat", "r");
+                if (fp == NULL) {
+                    printf("\nError opening file!");
+                    break;
+                }
+                printf("\t*****Invoice of %s*****", name);
+                while (fread(&order, sizeof(struct orders), 1, fp)) {
+                    fread(order.itm, sizeof(struct items), order.numOfItems, fp);
+                    float tot = 0;
+                    if (strcmp(order.customer, name) == 0) {
+                        generateBillHeader(order.customer, order.date);
+                        for (int i = 0; i < order.numOfItems; i++) {
+                            generateBillBody(order.itm[i].item, order.itm[i].qty, order.itm[i].price);
+                            tot += order.itm[i].qty * order.itm[i].price;
+                        }
+                        generateBillFooter(tot);
+                        invoiceFound = 1;
+                    }
+                }
+                if (!invoiceFound) {
+                    printf("\nSorry, the invoice for %s does not exist\n", name);
+                }
+                fclose(fp);
+                break;
+
+            case 4:
+                printf("\n\t\tBye Bye :)\n\n");
+                exit(0);
+                break;
+
+            default:
+                printf("Sorry, invalid option\n");
+                break;
         }
-        printf("\nDo you want to perform another operation?[y/n]:\t");
-        scanf("%s", &contFlag);
+        printf("\nDo you want to perform another operation? [y/n]: ");
+        scanf(" %c", &contFlag); // Added a space before %c to consume any leftover newline character
     }
-    printf("\n\t\t Bye Bye :)\n\n");
-    printf("\n\n");
+    printf("\n\t\tBye Bye :)\n\n");
 
     return 0;
 }
